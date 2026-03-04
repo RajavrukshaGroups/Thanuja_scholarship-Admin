@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { FiFilter } from "react-icons/fi";
+
 import { toast } from "react-toastify";
 import AdminLayout from "../../components/layout/adminLayout";
 import api from "../../utils/api";
@@ -23,6 +25,7 @@ import {
 } from "react-icons/fi";
 import { MdOutlineSchool, MdOutlineDateRange } from "react-icons/md";
 import { FaGraduationCap, FaAward, FaUniversity } from "react-icons/fa";
+import FilterScholarship from "../filterScholarship/filterScholarship";
 
 const FeatureNewScholarship = () => {
   const [scholarships, setScholarships] = useState([]);
@@ -45,6 +48,15 @@ const FeatureNewScholarship = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
 
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const [advancedFilters, setAdvancedFilters] = useState({
+    sponsor: [],
+    type: [],
+    fieldOfStudy: "",
+    gender: "",
+  });
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -57,12 +69,15 @@ const FeatureNewScholarship = () => {
     name: "",
     catchyPhrase: "",
     description: "",
-    sponsor: "",
-    type: "",
+    // sponsor: "",
+    sponsor: [],
+    // type: "",
+    type: [],
     fieldOfStudy: "", // ✅ ADD THIS
     educationLevels: [],
     coverageArea: "India",
     eligibilityCriteria: [""],
+    genderEligibility: ["Male", "Female", "Other"],
     documentsRequired: [""],
     benefits: [""],
     applicationStartDate: "",
@@ -79,6 +94,14 @@ const FeatureNewScholarship = () => {
     return `${day}/${month}/${year}`;
   };
 
+  useEffect(() => {
+    if (showFilterModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [showFilterModal]);
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -91,7 +114,7 @@ const FeatureNewScholarship = () => {
   // Fetch scholarships when page, search, or filter changes
   useEffect(() => {
     fetchScholarships();
-  }, [currentPage, debouncedSearchTerm, filter]);
+  }, [currentPage, debouncedSearchTerm, filter, advancedFilters]);
 
   // Fetch dropdown data on component mount
   useEffect(() => {
@@ -108,8 +131,13 @@ const FeatureNewScholarship = () => {
           page: currentPage,
           search: debouncedSearchTerm,
           status: filter,
+          sponsor: advancedFilters.sponsor.join(","),
+          type: advancedFilters.type.join(","),
+          fieldOfStudy: advancedFilters.fieldOfStudy,
+          gender: advancedFilters.gender,
         },
       });
+      console.log("response filter", response);
 
       setScholarships(response.data.data);
       setCurrentPage(response.data.currentPage);
@@ -222,10 +250,9 @@ const FeatureNewScholarship = () => {
   };
 
   const selectedType = types.find((t) => t._id === formData.type);
-
-  const isPostMetric = selectedType?.title
-    ?.toLowerCase()
-    .includes("post metric");
+  const isPostMetric = types
+    .filter((t) => formData.type.includes(t._id))
+    .some((t) => t.title?.toLowerCase().includes("post metric"));
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -234,7 +261,9 @@ const FeatureNewScholarship = () => {
       !formData.name ||
       !formData.description ||
       !formData.sponsor ||
+      // !formData.type ||
       !formData.type ||
+      formData.type.length === 0 ||
       !formData.fieldOfStudy || // ✅ NEW
       !formData.applicationStartDate ||
       !formData.applicationDeadline
@@ -336,10 +365,17 @@ const FeatureNewScholarship = () => {
       name: scholarship.name || "",
       catchyPhrase: scholarship.catchyPhrase || "",
       description: scholarship.description || "",
-      sponsor: scholarship.sponsor?._id || "",
-      type: scholarship.type?._id || "",
+      // sponsor: scholarship.sponsor?._id || "",
+      sponsor: scholarship.sponsor?.map((s) => s._id) || [],
+      // type: scholarship.type?._id || "",
+      type: scholarship.type?.map((t) => t._id) || [],
       fieldOfStudy: scholarship.fieldOfStudy?._id || "",
       educationLevels: scholarship.educationLevels || [], // ✅ ADD THIS
+      genderEligibility: scholarship.genderEligibility || [
+        "Male",
+        "Female",
+        "Other",
+      ],
       coverageArea: scholarship.coverageArea || "India",
       eligibilityCriteria: scholarship.eligibilityCriteria?.length
         ? scholarship.eligibilityCriteria
@@ -366,11 +402,13 @@ const FeatureNewScholarship = () => {
       catchyPhrase: "",
       description: "",
       sponsor: "",
-      type: "",
+      // type: "",
+      type: [],
       fieldOfStudy: "",
       educationLevels: [],
       coverageArea: "India",
       eligibilityCriteria: [""],
+      genderEligibility: ["Male", "Female", "Other"],
       documentsRequired: [""],
       benefits: [""],
       applicationStartDate: "",
@@ -406,19 +444,180 @@ const FeatureNewScholarship = () => {
                 Create and manage scholarship opportunities
               </p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <FiLoader className="animate-spin" />
-              ) : (
-                <FiPlus className="text-lg" />
-              )}
-              <span>Add New Scholarship</span>
-            </button>
+
+            {/* Action Buttons - Filter and Add New */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilterModal(true)}
+                className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl hover:shadow-lg transition relative"
+              >
+                <div className="flex items-center gap-2">
+                  <FiFilter />
+                  <span>Filters</span>
+                  {(() => {
+                    const count =
+                      (advancedFilters.sponsor?.length || 0) +
+                      (advancedFilters.type?.length || 0) +
+                      (advancedFilters.fieldOfStudy ? 1 : 0) +
+                      (advancedFilters.gender ? 1 : 0);
+                    return (
+                      count > 0 && (
+                        <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                          {count}
+                        </span>
+                      )
+                    );
+                  })()}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setShowModal(true)}
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <FiLoader className="animate-spin" />
+                ) : (
+                  <FiPlus className="text-lg" />
+                )}
+                <span>Add New Scholarship</span>
+              </button>
+            </div>
           </div>
+
+          {/* Active Filters Display - Below the buttons */}
+          {advancedFilters &&
+            (advancedFilters.sponsor?.length > 0 ||
+              advancedFilters.type?.length > 0 ||
+              advancedFilters.fieldOfStudy ||
+              advancedFilters.gender) && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-sm text-slate-400">Active filters:</span>
+
+                {/* Sponsor filters */}
+                {advancedFilters.sponsor?.map((id) => {
+                  const sponsor = sponsors.find((s) => s._id === id);
+                  return (
+                    sponsor && (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs border border-amber-500/30"
+                      >
+                        {sponsor.title}
+                        <button
+                          onClick={() => {
+                            const newFilters = {
+                              ...advancedFilters,
+                              sponsor: advancedFilters.sponsor.filter(
+                                (s) => s !== id,
+                              ),
+                            };
+                            setAdvancedFilters(newFilters);
+                            setCurrentPage(1);
+                          }}
+                          className="ml-1 hover:text-white transition"
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </span>
+                    )
+                  );
+                })}
+
+                {/* Type filters */}
+                {advancedFilters.type?.map((id) => {
+                  const type = types.find((t) => t._id === id);
+                  return (
+                    type && (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-pink-500/20 text-pink-300 rounded-full text-xs border border-pink-500/30"
+                      >
+                        {type.title}
+                        <button
+                          onClick={() => {
+                            const newFilters = {
+                              ...advancedFilters,
+                              type: advancedFilters.type.filter(
+                                (t) => t !== id,
+                              ),
+                            };
+                            setAdvancedFilters(newFilters);
+                            setCurrentPage(1);
+                          }}
+                          className="ml-1 hover:text-white transition"
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </span>
+                    )
+                  );
+                })}
+
+                {/* Field of Study filter */}
+                {advancedFilters.fieldOfStudy && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs border border-emerald-500/30">
+                    {
+                      fields.find((f) => f._id === advancedFilters.fieldOfStudy)
+                        ?.name
+                    }
+                    <button
+                      onClick={() => {
+                        setAdvancedFilters({
+                          ...advancedFilters,
+                          fieldOfStudy: "",
+                        });
+                        setCurrentPage(1);
+                      }}
+                      className="ml-1 hover:text-white transition"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </span>
+                )}
+
+                {/* Gender filter */}
+                {advancedFilters.gender && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-violet-500/20 text-violet-300 rounded-full text-xs border border-violet-500/30">
+                    {advancedFilters.gender}
+                    <button
+                      onClick={() => {
+                        setAdvancedFilters({
+                          ...advancedFilters,
+                          gender: "",
+                        });
+                        setCurrentPage(1);
+                      }}
+                      className="ml-1 hover:text-white transition"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </span>
+                )}
+
+                {/* Clear all button */}
+                {(advancedFilters.sponsor?.length > 0 ||
+                  advancedFilters.type?.length > 0 ||
+                  advancedFilters.fieldOfStudy ||
+                  advancedFilters.gender) && (
+                  <button
+                    onClick={() => {
+                      setAdvancedFilters({
+                        sponsor: [],
+                        type: [],
+                        fieldOfStudy: "",
+                        gender: "",
+                      });
+                      setCurrentPage(1);
+                    }}
+                    className="text-xs text-amber-400 hover:text-amber-300 transition ml-2"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+            )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
@@ -574,8 +773,9 @@ const FeatureNewScholarship = () => {
                   className="group bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 hover:bg-white/15 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300"
                 >
                   {/* Status Badges */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2">
+                  <div className="mb-4">
+                    {/* Status Badges */}
+                    <div className="flex gap-2 mb-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
                           scholarship.isActive
@@ -584,7 +784,11 @@ const FeatureNewScholarship = () => {
                         }`}
                       >
                         <span
-                          className={`w-2 h-2 rounded-full ${scholarship.isActive ? "bg-emerald-400" : "bg-rose-400"}`}
+                          className={`w-2 h-2 rounded-full ${
+                            scholarship.isActive
+                              ? "bg-emerald-400"
+                              : "bg-rose-400"
+                          }`}
                         ></span>
                         {scholarship.isActive ? "Active" : "Inactive"}
                       </span>
@@ -597,7 +801,7 @@ const FeatureNewScholarship = () => {
                       )}
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Action Buttons BELOW */}
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleToggleStatus(scholarship._id)}
@@ -606,34 +810,26 @@ const FeatureNewScholarship = () => {
                           scholarship.isActive
                             ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
                             : "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        }`}
                         title={scholarship.isActive ? "Deactivate" : "Activate"}
                       >
-                        {loading ? (
-                          <FiLoader className="animate-spin" />
-                        ) : (
-                          <FiPower className="text-sm" />
-                        )}
+                        <FiPower className="text-sm" />
                       </button>
+
                       <button
                         onClick={() => handleEdit(scholarship)}
-                        disabled={loading}
-                        className="p-2 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition"
                         title="Edit"
                       >
                         <FiEdit2 className="text-sm" />
                       </button>
+
                       <button
                         onClick={() => handleDelete(scholarship._id)}
-                        disabled={loading}
-                        className="p-2 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition"
                         title="Delete"
                       >
-                        {loading ? (
-                          <FiLoader className="animate-spin" />
-                        ) : (
-                          <FiTrash2 className="text-sm" />
-                        )}
+                        <FiTrash2 className="text-sm" />
                       </button>
                     </div>
                   </div>
@@ -660,18 +856,20 @@ const FeatureNewScholarship = () => {
                       <FaUniversity className="text-slate-400" />
                       <span className="text-slate-300">Sponsor:</span>
                       <span className="text-white font-medium">
-                        {scholarship.sponsor?.title || "N/A"}
+                        {/* {scholarship.sponsor?.title || "N/A"} */}
+                        {scholarship.sponsor?.map((s) => s.title).join(", ")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-1 text-xs">
                       <MdOutlineSchool className="text-slate-400" />
                       <span className="text-slate-300">Type:</span>
                       <span className="text-white font-medium">
-                        {scholarship.type?.title || "N/A"}
+                        {/* {scholarship.type?.title || "N/A"} */}
+                        {scholarship.type?.map((t) => t.title).join(", ")}
                       </span>
                     </div>
                     {scholarship.educationLevels?.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1 text-xs">
                         <MdOutlineSchool className="text-slate-400" />
                         <span className="text-slate-300">Education Level:</span>
                         <span className="text-white font-medium">
@@ -692,6 +890,15 @@ const FeatureNewScholarship = () => {
                         <span className="text-slate-300">Field of Study:</span>
                         <span className="text-white font-medium">
                           {scholarship.fieldOfStudy?.name}
+                        </span>
+                      </div>
+                    )}
+                    {scholarship.genderEligibility && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <FiMapPin className="text-slate-400" />
+                        <span className="text-slate-300">Gender Eligible:</span>
+                        <span className="text-white font-medium">
+                          {scholarship.genderEligibility?.join(", ")}
                         </span>
                       </div>
                     )}
@@ -731,68 +938,65 @@ const FeatureNewScholarship = () => {
                 </div>
               ))}
             </div>
-
-            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || loading}
-                  className={`p-2 rounded-lg transition ${
-                    currentPage === 1 || loading
-                      ? "bg-white/5 text-slate-600 cursor-not-allowed"
-                      : "bg-white/10 text-slate-300 hover:bg-white/20"
-                  }`}
-                >
-                  <FiChevronLeft />
-                </button>
+              <div className="mt-8 flex items-center justify-center gap-3">
+                {/* Common Button Style */}
+                {[
+                  {
+                    label: "«",
+                    onClick: () => handlePageChange(1),
+                    disabled: currentPage === 1 || loading,
+                  },
+                  {
+                    label: <FiChevronLeft />,
+                    onClick: () => handlePageChange(currentPage - 1),
+                    disabled: currentPage === 1 || loading,
+                  },
+                ].map((btn, index) => (
+                  <button
+                    key={index}
+                    onClick={btn.onClick}
+                    disabled={btn.disabled}
+                    className={`w-12 h-12 flex items-center justify-center rounded-xl transition text-lg ${
+                      btn.disabled
+                        ? "bg-white/5 text-slate-600 cursor-not-allowed"
+                        : "bg-white/10 text-slate-300 hover:bg-white/20"
+                    }`}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
 
-                {[...Array(totalPages)].map((_, index) => {
-                  const pageNum = index + 1;
-                  // Show first page, last page, and pages around current
-                  if (
-                    pageNum === 1 ||
-                    pageNum === totalPages ||
-                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        disabled={loading}
-                        className={`w-10 h-10 rounded-lg transition ${
-                          currentPage === pageNum
-                            ? "bg-gradient-to-r from-amber-500 to-pink-500 text-white shadow-lg"
-                            : "bg-white/10 text-slate-300 hover:bg-white/20"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  } else if (
-                    pageNum === currentPage - 2 ||
-                    pageNum === currentPage + 2
-                  ) {
-                    return (
-                      <span key={pageNum} className="text-slate-600">
-                        ...
-                      </span>
-                    );
-                  }
-                  return null;
-                })}
+                {/* Current Page */}
+                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-white font-semibold text-lg shadow-lg">
+                  {currentPage}
+                </div>
 
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || loading}
-                  className={`p-2 rounded-lg transition ${
-                    currentPage === totalPages || loading
-                      ? "bg-white/5 text-slate-600 cursor-not-allowed"
-                      : "bg-white/10 text-slate-300 hover:bg-white/20"
-                  }`}
-                >
-                  <FiChevronRight />
-                </button>
+                {[
+                  {
+                    label: <FiChevronRight />,
+                    onClick: () => handlePageChange(currentPage + 1),
+                    disabled: currentPage === totalPages || loading,
+                  },
+                  {
+                    label: "»",
+                    onClick: () => handlePageChange(totalPages),
+                    disabled: currentPage === totalPages || loading,
+                  },
+                ].map((btn, index) => (
+                  <button
+                    key={index}
+                    onClick={btn.onClick}
+                    disabled={btn.disabled}
+                    className={`w-12 h-12 flex items-center justify-center rounded-xl transition text-lg ${
+                      btn.disabled
+                        ? "bg-white/5 text-slate-600 cursor-not-allowed"
+                        : "bg-white/10 text-slate-300 hover:bg-white/20"
+                    }`}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
               </div>
             )}
           </>
@@ -904,7 +1108,7 @@ const FeatureNewScholarship = () => {
                       <label className="block text-slate-300 mb-2 text-sm">
                         Sponsor <span className="text-rose-400">*</span>
                       </label>
-                      <select
+                      {/* <select
                         name="sponsor"
                         value={formData.sponsor}
                         onChange={handleInputChange}
@@ -922,7 +1126,36 @@ const FeatureNewScholarship = () => {
                             {sponsor.title}
                           </option>
                         ))}
-                      </select>
+                      </select> */}
+                      <div className="space-y-2">
+                        {sponsors.map((sponsorItem) => (
+                          <label
+                            key={sponsorItem._id}
+                            className="flex items-center gap-2"
+                          >
+                            <input
+                              type="checkbox"
+                              value={sponsorItem._id}
+                              checked={formData.sponsor.includes(
+                                sponsorItem._id,
+                              )}
+                              onChange={(e) => {
+                                const { checked, value } = e.target;
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  sponsor: checked
+                                    ? [...prev.sponsor, value]
+                                    : prev.sponsor.filter((id) => id !== value),
+                                }));
+                              }}
+                            />
+                            <span className="text-white">
+                              {sponsorItem.title}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div>
@@ -930,7 +1163,7 @@ const FeatureNewScholarship = () => {
                         Scholarship Type{" "}
                         <span className="text-rose-400">*</span>
                       </label>
-                      <select
+                      {/* <select
                         name="type"
                         value={formData.type}
                         onChange={handleInputChange}
@@ -948,7 +1181,32 @@ const FeatureNewScholarship = () => {
                             {type.title}
                           </option>
                         ))}
-                      </select>
+                      </select> */}
+                      <div className="space-y-2">
+                        {types.map((typeItem) => (
+                          <label
+                            key={typeItem._id}
+                            className="flex items-center gap-2"
+                          >
+                            <input
+                              type="checkbox"
+                              value={typeItem._id}
+                              checked={formData.type.includes(typeItem._id)}
+                              onChange={(e) => {
+                                const { checked, value } = e.target;
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  type: checked
+                                    ? [...prev.type, value]
+                                    : prev.type.filter((id) => id !== value),
+                                }));
+                              }}
+                            />
+                            <span className="text-white">{typeItem.title}</span>
+                          </label>
+                        ))}
+                      </div>
                       {isPostMetric && (
                         <div className="mt-4 space-y-3">
                           <label className="block text-slate-300 text-sm">
@@ -993,6 +1251,42 @@ const FeatureNewScholarship = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      <label className="block text-slate-300 text-sm">
+                        Gender Eligibility
+                      </label>
+
+                      <div className="flex gap-6">
+                        {["Male", "Female", "Other"].map((gender) => (
+                          <label
+                            key={gender}
+                            className="flex items-center gap-2"
+                          >
+                            <input
+                              type="checkbox"
+                              value={gender}
+                              checked={formData.genderEligibility?.includes(
+                                gender,
+                              )}
+                              onChange={(e) => {
+                                const { checked, value } = e.target;
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  genderEligibility: checked
+                                    ? [...(prev.genderEligibility || []), value]
+                                    : prev.genderEligibility.filter(
+                                        (item) => item !== value,
+                                      ),
+                                }));
+                              }}
+                            />
+                            <span className="text-white">{gender}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div>
@@ -1290,6 +1584,21 @@ const FeatureNewScholarship = () => {
           </div>
         )}
       </div>
+      {showFilterModal && (
+        <FilterScholarship
+          sponsors={sponsors}
+          types={types}
+          fields={fields}
+          initialFilters={advancedFilters}
+          onApply={(filters) => {
+            setAdvancedFilters(filters);
+            setCurrentPage(1);
+            // Don't close modal automatically
+          }}
+          onClose={() => setShowFilterModal(false)}
+          isOpen={showFilterModal}
+        />
+      )}
     </AdminLayout>
   );
 };
