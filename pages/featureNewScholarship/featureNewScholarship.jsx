@@ -24,7 +24,8 @@ import {
   FiLoader,
 } from "react-icons/fi";
 import { MdOutlineSchool, MdOutlineDateRange } from "react-icons/md";
-import { FaGraduationCap, FaAward, FaUniversity } from "react-icons/fa";
+import { FaGraduationCap, FaAward, FaUniversity, FaMars } from "react-icons/fa";
+import { GiBookshelf } from "react-icons/gi";
 import FilterScholarship from "../filterScholarship/filterScholarship";
 
 const FeatureNewScholarship = () => {
@@ -886,7 +887,7 @@ const FeatureNewScholarship = () => {
                     </div>
                     {scholarship.fieldOfStudy && (
                       <div className="flex items-center gap-2 text-xs">
-                        <FiMapPin className="text-slate-400" />
+                        <GiBookshelf className="text-slate-400" />
                         <span className="text-slate-300">Field of Study:</span>
                         <span className="text-white font-medium">
                           {scholarship.fieldOfStudy?.name}
@@ -895,7 +896,7 @@ const FeatureNewScholarship = () => {
                     )}
                     {scholarship.genderEligibility && (
                       <div className="flex items-center gap-1 text-xs">
-                        <FiMapPin className="text-slate-400" />
+                        <FaMars className="text-slate-400" />
                         <span className="text-slate-300">Gender Eligible:</span>
                         <span className="text-white font-medium">
                           {scholarship.genderEligibility?.join(", ")}
