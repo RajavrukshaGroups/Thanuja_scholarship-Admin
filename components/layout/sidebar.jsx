@@ -79,9 +79,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       gradient: "from-cyan-500 to-blue-500",
     },
     {
-      to: "/admin/settings",
+      to: "/admin/membership-plans",
       icon: FiSettings,
-      label: "Settings",
+      label: "Plans",
       badge: null,
       gradient: "from-gray-500 to-slate-500",
     },

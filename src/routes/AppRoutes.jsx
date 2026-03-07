@@ -5,6 +5,7 @@ import Dashboard from "../../pages/dashboard/dashboard";
 import ScholarshipSponsors from "../../pages/scholarshipSponsors/scholarshipSponsors";
 import ScholarshipTypes from "../../pages/scholarshipTypes/scholarshipTypes";
 import FeatureNewScholarship from "../../pages/featureNewScholarship/featureNewScholarship";
+import MembershipPlans from "../../pages/membershipPlans/membershipPlans";
 
 const AppRoutes = () => {
   return (
@@ -41,6 +42,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <FeatureNewScholarship />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/membership-plans"
+          element={
+            <ProtectedRoute>
+              <MembershipPlans />
             </ProtectedRoute>
           }
         />
