@@ -40,6 +40,7 @@ const FeatureNewScholarship = () => {
   const [fields, setFields] = useState([]);
   const [newFieldName, setNewFieldName] = useState("");
   const [showFieldInput, setShowFieldInput] = useState(false);
+  const [documentTypes, setDocumentTypes] = useState([]);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +80,7 @@ const FeatureNewScholarship = () => {
     coverageArea: "India",
     eligibilityCriteria: [""],
     genderEligibility: ["Male", "Female", "Other"],
-    documentsRequired: [""],
+    documentsRequired: [],
     benefits: [""],
     applicationStartDate: "",
     applicationDeadline: "",
@@ -154,15 +155,17 @@ const FeatureNewScholarship = () => {
 
   const fetchDropdownData = async () => {
     try {
-      const [sponsorsRes, typesRes, fieldsRes] = await Promise.all([
+      const [sponsorsRes, typesRes, fieldsRes, docsRes] = await Promise.all([
         api.get("/admin/dropdown/sponsors"),
         api.get("/admin/dropdown/types"),
         api.get("/admin/dropdown/fields"), // ✅ NEW
+        api.get("/admin/dropdown/document-types"),
       ]);
 
       setSponsors(sponsorsRes.data.data);
       setTypes(typesRes.data.data);
       setFields(fieldsRes.data.data); // ✅ NEW
+      setDocumentTypes(docsRes.data.data);
     } catch (err) {
       toast.error("Failed to fetch dropdown data");
     }
@@ -292,9 +295,10 @@ const FeatureNewScholarship = () => {
         eligibilityCriteria: formData.eligibilityCriteria.filter(
           (item) => item.trim() !== "",
         ),
-        documentsRequired: formData.documentsRequired.filter(
-          (item) => item.trim() !== "",
-        ),
+        // documentsRequired: formData.documentsRequired.filter(
+        //   (item) => item.trim() !== "",
+        // ),
+        documentsRequired: formData.documentsRequired,
         benefits: formData.benefits.filter((item) => item.trim() !== ""),
       };
 
@@ -381,9 +385,11 @@ const FeatureNewScholarship = () => {
       eligibilityCriteria: scholarship.eligibilityCriteria?.length
         ? scholarship.eligibilityCriteria
         : [""],
-      documentsRequired: scholarship.documentsRequired?.length
-        ? scholarship.documentsRequired
-        : [""],
+      // documentsRequired: scholarship.documentsRequired?.length
+      //   ? scholarship.documentsRequired
+      //   : [""],
+      documentsRequired:
+        scholarship.documentsRequired?.map((doc) => doc._id || doc) || [],
       benefits: scholarship.benefits?.length ? scholarship.benefits : [""],
       applicationStartDate: scholarship.applicationStartDate
         ? new Date(scholarship.applicationStartDate).toISOString().split("T")[0]
@@ -1460,7 +1466,7 @@ const FeatureNewScholarship = () => {
                     Documents Required
                   </h3>
 
-                  {formData.documentsRequired.map((document, index) => (
+                  {/* {formData.documentsRequired.map((document, index) => (
                     <div key={index} className="flex gap-2">
                       <input
                         type="text"
@@ -1496,7 +1502,32 @@ const FeatureNewScholarship = () => {
                         </button>
                       )}
                     </div>
-                  ))}
+                  ))} */}
+                  <div className="space-y-3">
+                    {documentTypes.map((doc) => (
+                      <label key={doc._id} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          value={doc._id}
+                          checked={formData.documentsRequired.includes(doc._id)}
+                          onChange={(e) => {
+                            const { checked, value } = e.target;
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              documentsRequired: checked
+                                ? [...prev.documentsRequired, value]
+                                : prev.documentsRequired.filter(
+                                    (id) => id !== value,
+                                  ),
+                            }));
+                          }}
+                        />
+
+                        <span className="text-white">{doc.title}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Benefits */}
