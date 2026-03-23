@@ -58,7 +58,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       gradient: "from-emerald-500 to-teal-500",
     },
     {
-      to: "/admin/users",
+      to: "/admin/view-users",
       icon: GiGraduateCap,
       label: "Scholars",
       badge: "156",
