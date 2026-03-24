@@ -22,6 +22,8 @@ import { motion, AnimatePresence } from "framer-motion";
 const ViewDetails = ({ isOpen, onClose, user }) => {
   console.log("users", user);
   const [editingDocId, setEditingDocId] = useState(null);
+  const [editingField, setEditingField] = useState(null);
+  const [editValue, setEditValue] = useState("");
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -31,49 +33,6 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
-
-  //   {
-  //     isUploaded && (
-  //       <div className="flex items-center gap-2">
-  //         <span
-  //           className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(
-  //             verificationStatus,
-  //           )}`}
-  //         >
-  //           {verificationStatus}
-  //         </span>
-
-  //         {editingDocId === uploadedDoc._id ? (
-  //           <select
-  //             defaultValue={verificationStatus}
-  //             onChange={async (e) => {
-  //               const newStatus = e.target.value;
-
-  //               try {
-  //                 await api.put(`/document/${uploadedDoc._id}/status`, {
-  //                   status: newStatus,
-  //                 });
-
-  //                 toast.success("Updated");
-  //                 setEditingDocId(null);
-  //               } catch {
-  //                 toast.error("Error updating");
-  //               }
-  //             }}
-  //             className="bg-slate-800 text-white text-xs border border-white/10 rounded px-2 py-1"
-  //           >
-  //             <option value="verified">Verified</option>
-  //             <option value="rejected">Rejected</option>
-  //           </select>
-  //         ) : (
-  //           <FiEdit
-  //             className="text-slate-400 cursor-pointer hover:text-white"
-  //             onClick={() => setEditingDocId(uploadedDoc._id)}
-  //           />
-  //         )}
-  //       </div>
-  //     );
-  //   }
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -105,6 +64,25 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
       statusMap[status?.toLowerCase()] ||
       "bg-amber-500/20 text-amber-300 border border-amber-500/30"
     );
+  };
+
+  const handleUpdate = async (field) => {
+    try {
+      let payload = { [field]: editValue };
+
+      // 🔥 RESET DEGREE IF PRE METRIC
+      if (field === "educationLevel" && editValue === "Pre Metric") {
+        payload.degreeLevel = null;
+      }
+
+      await api.put(`/admin/user/${user._id}`, payload);
+
+      toast.success("Updated successfully");
+      setEditingField(null);
+      window.location.reload();
+    } catch (err) {
+      toast.error("Update failed");
+    }
   };
 
   if (!user) return null;
@@ -164,59 +142,234 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                     <FiUser className="text-amber-400" size={18} />
                     Basic Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Full Name</p>
-                      <p className="text-white font-medium break-words">
-                        {user.fullName}
-                      </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {/* FULL NAME */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-400">Full Name</p>
+                        <FiEdit
+                          className="cursor-pointer text-slate-400 hover:text-white"
+                          size={14}
+                          onClick={() => {
+                            setEditingField("fullName");
+                            setEditValue(user.fullName);
+                          }}
+                        />
+                      </div>
+
+                      {editingField === "fullName" ? (
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
+                          />
+                          <button
+                            className="text-emerald-400"
+                            onClick={() => handleUpdate("fullName")}
+                          >
+                            ✔
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-white font-medium mt-1">
+                          {user.fullName}
+                        </p>
+                      )}
                     </div>
-                    <div className="space-y-1">
+
+                    {/* USER ID */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
                       <p className="text-sm text-slate-400">User ID</p>
-                      <p className="text-white font-medium break-words">
+                      <p className="text-white font-medium mt-1">
                         {user.userId}
                       </p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Email</p>
-                      <p className="text-white font-medium break-all">
-                        {user.email}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Phone</p>
-                      <p className="text-white font-medium">{user.phone}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Education Level</p>
-                      <p className="text-white font-medium">
-                        {user.educationLevel || "N/A"}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Degree Level</p>
-                      <p className="text-white font-medium">
-                        {user.degreeLevel || "N/A"}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-slate-400">Status</p>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs w-fit ${getStatusBadge(
-                          user.isActive ? "active" : "inactive",
-                        )}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            user.isActive ? "bg-emerald-400" : "bg-rose-400"
-                          }`}
+
+                    {/* EMAIL */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-400">Email</p>
+                        <FiEdit
+                          className="cursor-pointer text-slate-400 hover:text-white"
+                          size={14}
+                          onClick={() => {
+                            setEditingField("email");
+                            setEditValue(user.email);
+                          }}
                         />
-                        {user.isActive ? "Active" : "Inactive"}
-                      </span>
+                      </div>
+
+                      {editingField === "email" ? (
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
+                          />
+                          <button
+                            className="text-emerald-400"
+                            onClick={() => handleUpdate("email")}
+                          >
+                            ✔
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-white font-medium mt-1 break-all">
+                          {user.email}
+                        </p>
+                      )}
                     </div>
-                    <div className="space-y-1">
+
+                    {/* PHONE */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-400">Phone</p>
+                        <FiEdit
+                          className="cursor-pointer text-slate-400 hover:text-white"
+                          size={14}
+                          onClick={() => {
+                            setEditingField("phone");
+                            setEditValue(user.phone);
+                          }}
+                        />
+                      </div>
+
+                      {editingField === "phone" ? (
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
+                          />
+                          <button
+                            className="text-emerald-400"
+                            onClick={() => handleUpdate("phone")}
+                          >
+                            ✔
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-white font-medium mt-1">
+                          {user.phone}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* EDUCATION LEVEL */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-400">
+                          Education Level
+                        </p>
+                        <FiEdit
+                          className="cursor-pointer text-slate-400 hover:text-white"
+                          size={14}
+                          onClick={() => {
+                            setEditingField("educationLevel");
+                            setEditValue(user.educationLevel);
+                          }}
+                        />
+                      </div>
+
+                      {editingField === "educationLevel" ? (
+                        <div className="flex gap-2 mt-1">
+                          <select
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
+                          >
+                            <option value="Pre Metric">Pre Metric</option>
+                            <option value="Post Metric">Post Metric</option>
+                          </select>
+
+                          <button
+                            className="text-emerald-400"
+                            onClick={() => handleUpdate("educationLevel")}
+                          >
+                            ✔
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-white font-medium mt-1">
+                          {user.educationLevel || "N/A"}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* DEGREE LEVEL */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-slate-400">Degree Level</p>
+                        <FiEdit
+                          className="cursor-pointer text-slate-400 hover:text-white"
+                          size={14}
+                          onClick={() => {
+                            setEditingField("degreeLevel");
+                            setEditValue(user.degreeLevel);
+                          }}
+                        />
+                      </div>
+
+                      {editingField === "degreeLevel" ? (
+                        user.educationLevel === "Post Metric" ? (
+                          <div className="flex gap-2 mt-1">
+                            <select
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
+                            >
+                              <option value="Undergraduate">
+                                Undergraduate
+                              </option>
+                              <option value="Postgraduate">Postgraduate</option>
+                              <option value="PhD">PhD</option>
+                            </select>
+
+                            <button
+                              className="text-emerald-400"
+                              onClick={() => handleUpdate("degreeLevel")}
+                            >
+                              ✔
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 mt-1">
+                            Not applicable (Pre Metric)
+                          </p>
+                        )
+                      ) : (
+                        <p className="text-white font-medium mt-1">
+                          {user.degreeLevel || "N/A"}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* STATUS */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
+                      <p className="text-sm text-slate-400">Status</p>
+
+                      <div className="mt-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusBadge(
+                            user.isActive ? "active" : "inactive",
+                          )}`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              user.isActive ? "bg-emerald-400" : "bg-rose-400"
+                            }`}
+                          />
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* REGISTERED */}
+                    <div className="flex flex-col justify-between min-h-[65px]">
                       <p className="text-sm text-slate-400">Registered On</p>
-                      <p className="text-white font-medium">
+                      <p className="text-white font-medium mt-1">
                         {formatDate(user.createdAt)}
                       </p>
                     </div>
@@ -307,168 +460,6 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                   )}
                 </div>
 
-                {/* Membership Subscription */}
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                    <MdOutlineWorkspacePremium
-                      className="text-yellow-400"
-                      size={18}
-                    />
-                    Membership Plan
-                  </h3>
-
-                  {user.subscription ? (
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
-                      <div>
-                        <p className="text-white font-semibold text-lg">
-                          {user.subscription.planTitle}
-                        </p>
-                        <p className="text-sm text-slate-400 mt-1 flex items-start">
-                          Duration: {user.subscription.planDuration} days
-                        </p>
-                        <p className="text-sm text-slate-400 flex items-start">
-                          Start: {formatDate(user.subscription.startDate)}
-                        </p>
-                        <p className="text-sm text-slate-400 flex items-start">
-                          Expiry: {formatDate(user.subscription.expiryDate)}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-emerald-400">
-                          ₹{user.subscription.planAmount}
-                        </p>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(
-                            user.subscription.status,
-                          )}`}
-                        >
-                          {user.subscription.status}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-slate-400 text-sm">
-                      No active subscription
-                    </p>
-                  )}
-                </div>
-
-                {/* Payments */}
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                    <FiDollarSign className="text-emerald-400" size={18} />
-                    Payments ({user.payments?.length || 0})
-                  </h3>
-                  {user.payments?.length > 0 ? (
-                    <div className="space-y-3">
-                      {user.payments.map((payment, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <p className="text-white font-medium">
-                                  {formatCurrency(payment.amount)}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-3 mt-2">
-                                <div className="flex items-center gap-1 text-xs text-slate-400">
-                                  <FiClock
-                                    size={12}
-                                    className="flex-shrink-0"
-                                  />
-                                  <span>
-                                    Date: {formatDate(payment.createdAt)}
-                                  </span>
-                                </div>
-                                {/* <div className="flex items-center gap-1 text-xs text-slate-400">
-                                  <FiAward
-                                    size={12}
-                                    className="flex-shrink-0"
-                                  />
-                                  <span>
-                                    Plan: {payment.plan?.planTitle || "N/A"}
-                                  </span>
-                                </div> */}
-                              </div>
-                              <p className="text-xs text-slate-400 mt-2 break-all flex items-start">
-                                Razorpay Payment Id: {payment.razorpayOrderId}
-                              </p>
-                            </div>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs whitespace-nowrap self-start ${getStatusBadge(
-                                payment.status,
-                              )}`}
-                            >
-                              {payment.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FiDollarSign className="text-4xl text-slate-500 mx-auto mb-2" />
-                      <p className="text-slate-400 text-sm">No payments yet</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Documents */}
-                {/* {user.documents?.length > 0 && (
-                  <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                    <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                      <FiFileText className="text-blue-400" size={18} />
-                      Documents ({user.documents.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {user.documents.map((doc, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                            <div className="flex-1">
-                              <p className="text-white font-medium break-words flex items-start">
-                                {doc.document?.documentName || "Document"}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <FiCalendar className="text-slate-400 text-xs flex-shrink-0 flex items-start" />
-                                <p className="text-xs text-slate-400">
-                                  Uploaded: {formatDate(doc.uploadedAt)}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${getStatusBadge(
-                                  doc.document?.verificationStatus,
-                                )}`}
-                              >
-                                {doc.document?.verificationStatus || "pending"}
-                              </span>
-                              {doc.fileUrl && (
-                                <a
-                                  href={doc.fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <FiFileText size={12} />
-                                  View Document →
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )} */}
                 {/* Documents (Scholarship-wise Required vs Uploaded) */}
                 <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                   <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
@@ -609,6 +600,188 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Membership Subscription */}
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                    <MdOutlineWorkspacePremium
+                      className="text-yellow-400"
+                      size={18}
+                    />
+                    Membership Plan
+                  </h3>
+
+                  {user.subscription ? (
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+                      <div>
+                        <p className="text-white font-semibold text-lg">
+                          {user.subscription.planTitle}
+                        </p>
+                        <p className="text-sm text-slate-400 mt-1 flex items-start">
+                          Duration: {user.subscription.planDuration} days
+                        </p>
+                        <p className="text-sm text-slate-400 flex items-start">
+                          Start: {formatDate(user.subscription.startDate)}
+                        </p>
+                        <p className="text-sm text-slate-400 flex items-start">
+                          Expiry: {formatDate(user.subscription.expiryDate)}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-emerald-400">
+                          ₹{user.subscription.planAmount}
+                        </p>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(
+                            user.subscription.status,
+                          )}`}
+                        >
+                          {user.subscription.status}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-sm">
+                      No active subscription
+                    </p>
+                  )}
+                </div>
+
+                {/* Payments */}
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                    <FiDollarSign className="text-emerald-400" size={18} />
+                    Payments ({user.payments?.length || 0})
+                  </h3>
+                  {user.payments?.length > 0 ? (
+                    <div className="space-y-3">
+                      {user.payments.map((payment, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="text-white font-medium">
+                                  {formatCurrency(payment.amount)}
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap gap-3 mt-2">
+                                <div className="flex items-center gap-1 text-xs text-slate-400">
+                                  <FiClock
+                                    size={12}
+                                    className="flex-shrink-0"
+                                  />
+                                  <span>
+                                    Date: {formatDate(payment.createdAt)}
+                                  </span>
+                                </div>
+                                {/* <div className="flex items-center gap-1 text-xs text-slate-400">
+                                  <FiAward
+                                    size={12}
+                                    className="flex-shrink-0"
+                                  />
+                                  <span>
+                                    Plan: {payment.plan?.planTitle || "N/A"}
+                                  </span>
+                                </div> */}
+                              </div>
+                              <p className="text-xs text-slate-400 mt-2 break-all flex items-start">
+                                Razorpay Payment Id: {payment.razorpayOrderId}
+                              </p>
+                              {payment.paymentType === "upgrade" &&
+                                user.subscription?.upgradeHistory?.length > 0 &&
+                                (() => {
+                                  const upgrade =
+                                    user.subscription.upgradeHistory.find(
+                                      (u) => u.paidAmount === payment.amount,
+                                    );
+
+                                  if (!upgrade) return null;
+
+                                  return (
+                                    <div className="mt-2">
+                                      <p className="text-xs text-amber-400 font-medium">
+                                        Upgrade: {upgrade.fromPlanTitle} →{" "}
+                                        {upgrade.toPlanTitle}
+                                      </p>
+                                    </div>
+                                  );
+                                })()}
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs whitespace-nowrap self-start ${getStatusBadge(
+                                payment.status,
+                              )}`}
+                            >
+                              {payment.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FiDollarSign className="text-4xl text-slate-500 mx-auto mb-2" />
+                      <p className="text-slate-400 text-sm">No payments yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Documents */}
+                {/* {user.documents?.length > 0 && (
+                  <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                    <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                      <FiFileText className="text-blue-400" size={18} />
+                      Documents ({user.documents.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {user.documents.map((doc, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                            <div className="flex-1">
+                              <p className="text-white font-medium break-words flex items-start">
+                                {doc.document?.documentName || "Document"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <FiCalendar className="text-slate-400 text-xs flex-shrink-0 flex items-start" />
+                                <p className="text-xs text-slate-400">
+                                  Uploaded: {formatDate(doc.uploadedAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${getStatusBadge(
+                                  doc.document?.verificationStatus,
+                                )}`}
+                              >
+                                {doc.document?.verificationStatus || "pending"}
+                              </span>
+                              {doc.fileUrl && (
+                                <a
+                                  href={doc.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FiFileText size={12} />
+                                  View Document →
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )} */}
               </div>
             </div>
           </motion.div>
