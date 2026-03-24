@@ -13,6 +13,7 @@ import {
   FiClock,
   FiAward,
   FiBookOpen,
+  FiEdit,
 } from "react-icons/fi";
 import { MdOutlineSchool, MdOutlineWorkspacePremium } from "react-icons/md";
 import { FaGraduationCap, FaUniversity, FaUserGraduate } from "react-icons/fa";
@@ -20,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const ViewDetails = ({ isOpen, onClose, user }) => {
   console.log("users", user);
+  const [editingDocId, setEditingDocId] = useState(null);
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -29,6 +31,49 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  //   {
+  //     isUploaded && (
+  //       <div className="flex items-center gap-2">
+  //         <span
+  //           className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(
+  //             verificationStatus,
+  //           )}`}
+  //         >
+  //           {verificationStatus}
+  //         </span>
+
+  //         {editingDocId === uploadedDoc._id ? (
+  //           <select
+  //             defaultValue={verificationStatus}
+  //             onChange={async (e) => {
+  //               const newStatus = e.target.value;
+
+  //               try {
+  //                 await api.put(`/document/${uploadedDoc._id}/status`, {
+  //                   status: newStatus,
+  //                 });
+
+  //                 toast.success("Updated");
+  //                 setEditingDocId(null);
+  //               } catch {
+  //                 toast.error("Error updating");
+  //               }
+  //             }}
+  //             className="bg-slate-800 text-white text-xs border border-white/10 rounded px-2 py-1"
+  //           >
+  //             <option value="verified">Verified</option>
+  //             <option value="rejected">Rejected</option>
+  //           </select>
+  //         ) : (
+  //           <FiEdit
+  //             className="text-slate-400 cursor-pointer hover:text-white"
+  //             onClick={() => setEditingDocId(uploadedDoc._id)}
+  //           />
+  //         )}
+  //       </div>
+  //     );
+  //   }
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -208,13 +253,46 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                                 </div>
                               </div>
                             </div>
-                            <span
+                            {/* <span
                               className={`px-2 py-1 rounded-full text-xs whitespace-nowrap self-start ${getStatusBadge(
                                 app.status,
                               )}`}
                             >
                               {app.status || "submitted"}
-                            </span>
+                            </span> */}
+                            <select
+                              value={app.status || "submitted"}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+
+                                try {
+                                  const res = await api.put(
+                                    `/admin/application/${app._id}/status`,
+                                    { status: newStatus },
+                                  );
+
+                                  toast.success(
+                                    res.data.message ||
+                                      "Application status updated",
+                                  );
+
+                                  // 🔥 SIMPLE REFRESH (same as your docs)
+                                  window.location.reload();
+                                } catch (err) {
+                                  toast.error(
+                                    "Failed to update application status",
+                                  );
+                                }
+                              }}
+                              className={`px-2 py-1 rounded-full text-xs border cursor-pointer ${getStatusBadge(
+                                app.status,
+                              )}`}
+                            >
+                              <option value="submitted">Submitted</option>
+                              <option value="under_review">Under Review</option>
+                              <option value="approved">Approved</option>
+                              <option value="rejected">Rejected</option>
+                            </select>
                           </div>
                         </div>
                       ))}
@@ -340,7 +418,7 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                 </div>
 
                 {/* Documents */}
-                {user.documents?.length > 0 && (
+                {/* {user.documents?.length > 0 && (
                   <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                     <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
                       <FiFileText className="text-blue-400" size={18} />
@@ -390,7 +468,147 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
+                {/* Documents (Scholarship-wise Required vs Uploaded) */}
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                    <FiFileText className="text-blue-400" size={18} />
+                    Documents Status
+                  </h3>
+
+                  {user.applications?.length > 0 ? (
+                    user.applications.map((app, idx) => {
+                      // 🔥 ALL uploaded document names
+                      const uploadedDocs =
+                        user.documents?.map((d) => d.document?.documentName) ||
+                        [];
+
+                      return (
+                        <div key={idx} className="mb-6">
+                          {/* Scholarship Name */}
+                          <p className="text-white font-semibold mb-3">
+                            {app.scholarshipName}
+                          </p>
+
+                          {/* Required Documents */}
+                          <div className="space-y-2">
+                            {app.requiredDocuments?.length > 0 ? (
+                              app.requiredDocuments.map((reqDoc, i) => {
+                                const uploadedDoc = user.documents?.find(
+                                  (d) =>
+                                    d.document?.documentName === reqDoc.title,
+                                );
+
+                                const isUploaded = !!uploadedDoc;
+                                const verificationStatus =
+                                  uploadedDoc?.document?.verificationStatus ||
+                                  "missing";
+
+                                return (
+                                  <div
+                                    key={i}
+                                    className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white/5 px-3 py-3 rounded-lg border border-white/10"
+                                  >
+                                    {/* LEFT SIDE */}
+                                    <div className="flex-1">
+                                      <p className="text-sm text-white font-medium flex items-start">
+                                        {reqDoc.title}
+                                      </p>
+
+                                      {isUploaded && (
+                                        <p className="text-xs text-slate-400 mt-1 flex items-start">
+                                          Uploaded:{" "}
+                                          {formatDate(uploadedDoc.uploadedAt)}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    {/* RIGHT SIDE */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      {/* Upload Status */}
+                                      <span
+                                        className={`px-2 py-1 rounded-full text-xs ${
+                                          isUploaded
+                                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                            : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                        }`}
+                                      >
+                                        {isUploaded ? "Uploaded" : "Missing"}
+                                      </span>
+
+                                      {isUploaded && (
+                                        <select
+                                          value={verificationStatus}
+                                          onChange={async (e) => {
+                                            const newStatus = e.target.value;
+
+                                            try {
+                                              await api.put(
+                                                `/admin/document/${uploadedDoc._id}/status`,
+                                                { status: newStatus },
+                                              );
+
+                                              toast.success(
+                                                "Document status updated",
+                                              );
+
+                                              window.location.reload();
+                                            } catch (err) {
+                                              toast.error(
+                                                "Failed to update status",
+                                              );
+                                            }
+                                          }}
+                                          className={`px-2 py-1 rounded-full text-xs border cursor-pointer ${getStatusBadge(
+                                            verificationStatus,
+                                          )}`}
+                                        >
+                                          <option value="pending">
+                                            Pending
+                                          </option>
+                                          <option value="verified">
+                                            Verified
+                                          </option>
+                                          <option value="rejected">
+                                            Rejected
+                                          </option>
+                                        </select>
+                                      )}
+
+                                      {/* View File */}
+                                      {uploadedDoc?.fileUrl && (
+                                        <a
+                                          href={uploadedDoc.fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        >
+                                          <FiFileText size={12} />
+                                          View
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className="text-slate-400 text-sm">
+                                No required documents defined
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <FiFileText className="text-4xl text-slate-500 mx-auto mb-2" />
+                      <p className="text-slate-400 text-sm">
+                        No applications found
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
