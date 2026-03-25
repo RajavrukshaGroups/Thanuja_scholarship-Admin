@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiHome,
   FiUsers,
@@ -15,9 +15,32 @@ import {
 import { MdOutlineSchool, MdOutlineEmojiEvents } from "react-icons/md";
 import { GiGraduateCap } from "react-icons/gi";
 import { FaUniversity } from "react-icons/fa";
-
+import api from "../../utils/api";
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
+
+  const [stats, setStats] = useState({
+    sponsors: 0,
+    types: 0,
+    scholarships: 0,
+    users: 0,
+    payments: 0,
+    paymentsCount: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.get("/admin/dashboard-stats");
+        if (res.data.success) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.error("Stats error", err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const linkClasses = ({ isActive }) =>
     `group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
@@ -27,6 +50,65 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
          ? "bg-gradient-to-r from-amber-500 to-pink-500 text-white shadow-lg shadow-amber-500/25"
          : "text-slate-300 hover:bg-white/10 hover:text-white hover:translate-x-1"
      }`;
+
+  // const navItems = [
+  //   {
+  //     to: "/admin/dashboard",
+  //     icon: FiHome,
+  //     label: "Dashboard",
+  //     badge: null,
+  //     gradient: "from-blue-500 to-indigo-500",
+  //   },
+  //   {
+  //     to: "/admin/scholarship-sponsors",
+  //     icon: FaUniversity,
+  //     label: "Scholarship Sponsors",
+  //     badge: "12",
+  //     gradient: "from-amber-500 to-orange-500",
+  //   },
+  //   {
+  //     to: "/admin/scholarship-types",
+  //     icon: MdOutlineSchool,
+  //     label: "Scholarship Type",
+  //     badge: "8",
+  //     gradient: "from-emerald-500 to-teal-500",
+  //   },
+  //   {
+  //     to: "/admin/feature-scholarship",
+  //     icon: MdOutlineSchool,
+  //     label: "Feature Scholarship",
+  //     badge: "8",
+  //     gradient: "from-emerald-500 to-teal-500",
+  //   },
+  //   {
+  //     to: "/admin/view-users",
+  //     icon: GiGraduateCap,
+  //     label: "Scholars",
+  //     badge: "156",
+  //     gradient: "from-violet-500 to-purple-500",
+  //   },
+  //   {
+  //     to: "/admin/view-payments",
+  //     icon: FiCreditCard,
+  //     label: "Payments",
+  //     badge: "₹24.5k",
+  //     gradient: "from-rose-500 to-pink-500",
+  //   },
+  //   {
+  //     to: "/admin/post-notification",
+  //     icon: FiUploadCloud,
+  //     label: "Notifications",
+  //     badge: "3",
+  //     gradient: "from-cyan-500 to-blue-500",
+  //   },
+  //   {
+  //     to: "/admin/membership-plans",
+  //     icon: FiSettings,
+  //     label: "Plans",
+  //     badge: null,
+  //     gradient: "from-gray-500 to-slate-500",
+  //   },
+  // ];
 
   const navItems = [
     {
@@ -40,43 +122,36 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       to: "/admin/scholarship-sponsors",
       icon: FaUniversity,
       label: "Scholarship Sponsors",
-      badge: "12",
+      badge: stats.sponsors,
       gradient: "from-amber-500 to-orange-500",
     },
     {
       to: "/admin/scholarship-types",
-      icon: MdOutlineSchool,
+      icon: FiGrid,
       label: "Scholarship Type",
-      badge: "8",
+      badge: stats.types,
       gradient: "from-emerald-500 to-teal-500",
     },
     {
       to: "/admin/feature-scholarship",
-      icon: MdOutlineSchool,
+      icon: FiAward,
       label: "Feature Scholarship",
-      badge: "8",
+      badge: stats.scholarships,
       gradient: "from-emerald-500 to-teal-500",
     },
     {
       to: "/admin/view-users",
-      icon: GiGraduateCap,
+      icon: FiUsers,
       label: "Scholars",
-      badge: "156",
+      badge: stats.users,
       gradient: "from-violet-500 to-purple-500",
     },
     {
       to: "/admin/view-payments",
       icon: FiCreditCard,
       label: "Payments",
-      badge: "₹24.5k",
+      badge: `${stats.paymentsCount} | ₹${stats.payments.toLocaleString()}`,
       gradient: "from-rose-500 to-pink-500",
-    },
-    {
-      to: "/admin/post-notification",
-      icon: FiUploadCloud,
-      label: "Notifications",
-      badge: "3",
-      gradient: "from-cyan-500 to-blue-500",
     },
     {
       to: "/admin/membership-plans",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiMenu,
   FiLogOut,
@@ -8,11 +8,35 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { logoutAdmin } from "../../utils/auth";
+import api from "../../utils/api";
+import { useNavigate } from "react-router-dom";
 
 const Header = ({ toggleSidebar, sidebarOpen }) => {
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications] = useState(3); // This would come from your state/context
+
+  const [appStats, setAppStats] = useState({
+    totalApplications: 0,
+    todayApplications: 0,
+    totalUsers: 0,
+    todayUsers: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.get("/admin/application-stats");
+        if (res.data.success) {
+          setAppStats(res.data.data);
+        }
+      } catch (err) {
+        console.error("application error stats", err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -183,19 +207,48 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
       {/* Quick Stats Bar - Hidden on mobile */}
       <div className="hidden lg:block px-6 py-2 border-t border-slate-700/50 bg-slate-900/95">
         <div className="flex items-center gap-6 text-xs">
-          {/* <div className="flex items-center gap-2">
-            <span className="text-slate-400">Today's Visitors:</span>
-            <span className="text-white font-semibold">1,234</span>
-          </div>
-          <div className="w-px h-4 bg-slate-700"></div> */}
-          <div className="flex items-center gap-2">
+          {/* New Applications */}
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+            onClick={() => navigate("/admin/applications?type=today")}
+          >
             <span className="text-slate-400">New Applications:</span>
-            <span className="text-emerald-400 font-semibold">+12</span>
+            <span className="text-emerald-400 font-semibold">
+              +{appStats.todayApplications}
+            </span>
           </div>
+
           <div className="w-px h-4 bg-slate-700"></div>
+
+          {/* Total Applications */}
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+            onClick={() => navigate("/admin/applications?type=all")}
+          >
+            <span className="text-slate-400">Total Applications:</span>
+            <span className="text-blue-400 font-semibold">
+              {appStats.totalApplications}
+            </span>
+          </div>
+
+          <div className="w-px h-4 bg-slate-700"></div>
+
+          {/* New Users */}
           <div className="flex items-center gap-2">
-            <span className="text-slate-400">Pending Reviews:</span>
-            <span className="text-amber-400 font-semibold">5</span>
+            <span className="text-slate-400">New Users:</span>
+            <span className="text-purple-400 font-semibold">
+              +{appStats.todayUsers}
+            </span>
+          </div>
+
+          <div className="w-px h-4 bg-slate-700"></div>
+
+          {/* Total Users */}
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Total Users:</span>
+            <span className="text-pink-400 font-semibold">
+              {appStats.totalUsers}
+            </span>
           </div>
         </div>
       </div>

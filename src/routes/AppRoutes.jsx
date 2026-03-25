@@ -7,6 +7,8 @@ import ScholarshipTypes from "../../pages/scholarshipTypes/scholarshipTypes";
 import FeatureNewScholarship from "../../pages/featureNewScholarship/featureNewScholarship";
 import MembershipPlans from "../../pages/membershipPlans/membershipPlans";
 import ViewUsers from "../../pages/viewUsers/viewUsers";
+import ViewPayments from "../../pages/viewUsers/viewPayments";
+import Applications from "../../pages/applications/applications";
 
 const AppRoutes = () => {
   return (
@@ -59,6 +61,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <ViewUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/view-payments"
+          element={
+            <ProtectedRoute>
+              <ViewPayments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/applications"
+          element={
+            <ProtectedRoute>
+              <Applications />
             </ProtectedRoute>
           }
         />

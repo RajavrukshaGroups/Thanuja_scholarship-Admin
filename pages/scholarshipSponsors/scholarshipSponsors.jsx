@@ -46,7 +46,7 @@ const ScholarshipSponsors = () => {
     try {
       setLoading(true);
       const response = await api.get("/admin/sponsors");
-    //   toast.success(response.data.message);
+      //   toast.success(response.data.message);
       setSponsors(response.data.data);
     } catch (err) {
       toast.error("Failed to fetch sponsors");
