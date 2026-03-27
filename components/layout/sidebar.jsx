@@ -26,6 +26,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     users: 0,
     payments: 0,
     paymentsCount: 0,
+    membershipPlansCount: 0,
   });
 
   useEffect(() => {
@@ -157,7 +158,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       to: "/admin/membership-plans",
       icon: FiSettings,
       label: "Plans",
-      badge: null,
+      badge: stats.membershipPlansCount,
       gradient: "from-gray-500 to-slate-500",
     },
   ];

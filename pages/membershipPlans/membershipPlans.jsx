@@ -88,6 +88,15 @@ const MembershipPlans = () => {
     }
   };
 
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -500,7 +509,7 @@ const MembershipPlans = () => {
                 <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-4 border-t border-white/20">
                   <span className="flex items-center gap-1">
                     <FiCalendar className="text-slate-400" />
-                    Created: {new Date(plan.createdAt).toLocaleDateString()}
+                    Created: {formatDate(plan.createdAt)}{" "}
                   </span>
                   <span className="flex items-center gap-1">
                     <FiInfo className="text-slate-400" />
