@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   //   baseURL: import.meta.env.VITE_API_URL || "https://server.aitif.in",
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:7000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:10000",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
