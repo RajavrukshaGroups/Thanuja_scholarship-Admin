@@ -189,7 +189,7 @@ const FeatureNewScholarship = () => {
       if (name === "type") {
         const selected = types.find((t) => t._id === value);
 
-        const isPost = selected?.title?.toLowerCase().includes("post metric");
+        const isPost = selected?.title?.toLowerCase().includes("post matric");
 
         if (!isPost) {
           updated.educationLevels = [];
@@ -256,7 +256,7 @@ const FeatureNewScholarship = () => {
   const selectedType = types.find((t) => t._id === formData.type);
   const isPostMetric = types
     .filter((t) => formData.type.includes(t._id))
-    .some((t) => t.title?.toLowerCase().includes("post metric"));
+    .some((t) => t.title?.toLowerCase().includes("post matric"));
   const handleSubmit = async (e) => {
     e.preventDefault();
 

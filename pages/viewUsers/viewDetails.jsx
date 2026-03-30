@@ -70,8 +70,8 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
     try {
       let payload = { [field]: editValue };
 
-      // 🔥 RESET DEGREE IF PRE METRIC
-      if (field === "educationLevel" && editValue === "Pre Metric") {
+      // 🔥 RESET DEGREE IF PRE MATRIC
+      if (field === "educationLevel" && editValue === "Pre Matric") {
         payload.degreeLevel = null;
       }
 
@@ -280,8 +280,8 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                             onChange={(e) => setEditValue(e.target.value)}
                             className="bg-slate-800 text-white px-2 py-1 rounded w-full text-sm"
                           >
-                            <option value="Pre Metric">Pre Metric</option>
-                            <option value="Post Metric">Post Metric</option>
+                            <option value="Pre Matric">Pre Matric</option>
+                            <option value="Post Matric">Post Matric</option>
                           </select>
 
                           <button
@@ -313,7 +313,7 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                       </div>
 
                       {editingField === "degreeLevel" ? (
-                        user.educationLevel === "Post Metric" ? (
+                        user.educationLevel === "Post Matric" ? (
                           <div className="flex gap-2 mt-1">
                             <select
                               value={editValue}
@@ -336,7 +336,7 @@ const ViewDetails = ({ isOpen, onClose, user }) => {
                           </div>
                         ) : (
                           <p className="text-xs text-slate-400 mt-1">
-                            Not applicable (Pre Metric)
+                            Not applicable (Pre Matric)
                           </p>
                         )
                       ) : (
