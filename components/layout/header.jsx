@@ -15,8 +15,7 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications] = useState(3); // This would come from your state/context
-
+  const [notifications, setNotifications] = useState([]);
   const [appStats, setAppStats] = useState({
     totalApplications: 0,
     todayApplications: 0,
@@ -37,6 +36,45 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
     };
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get("/admin/applications-list", {
+        params: {
+          todayPage: 1,
+          todayLimit: 5, // 🔥 only latest 5
+          allPage: 1,
+          allLimit: 5,
+        },
+      });
+
+      // 🔥 You can choose today OR all
+      setNotifications(res.data.data.today.data);
+    } catch (err) {
+      console.error("Notification fetch error", err);
+    }
+  };
+
+  const formatDateTime = (date) => {
+    const d = new Date(date);
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const seconds = String(d.getSeconds()).padStart(2, "0");
+
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
+  };
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -78,9 +116,9 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
               className="relative p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all duration-200 group"
             >
               <FiBell className="text-xl" />
-              {notifications > 0 && (
+              {notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-amber-500 to-pink-500 rounded-full text-xs text-white flex items-center justify-center shadow-lg">
-                  {notifications}
+                  {notifications.length}
                 </span>
               )}
               {/* Tooltip */}
@@ -102,33 +140,49 @@ const Header = ({ toggleSidebar, sidebarOpen }) => {
                       Notifications
                     </h3>
                   </div>
-                  <div className="max-h-96 overflow-y-auto bg-slate-800">
-                    {[1, 2, 3].map((item) => (
+                  {notifications.length === 0 ? (
+                    <p className="text-center text-slate-400 py-6 text-sm">
+                      No new notifications
+                    </p>
+                  ) : (
+                    notifications.map((app) => (
                       <div
-                        key={item}
-                        className="p-3 hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-700 last:border-0"
+                        key={app._id}
+                        onClick={() => navigate(`/admin/applications?type=all`)}
+                        className="p-4 hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-700 last:border-0"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-amber-500 to-pink-500 flex items-center justify-center text-white text-xs shadow-md">
-                            {item}
+                          {/* Icon */}
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 flex items-center justify-center text-white text-sm shadow-md flex-shrink-0">
+                            📄
                           </div>
-                          <div className="flex-1">
+
+                          {/* Content */}
+                          <div className="flex-1 leading-tight">
                             <p className="text-sm text-white">
-                              New scholarship application
+                              <span className="font-medium">
+                                {app.user?.fullName || "User"}
+                              </span>{" "}
+                              applied for{" "}
+                              <span className="text-amber-400 font-medium">
+                                {app.scholarship?.name || "Scholarship"}
+                              </span>
                             </p>
+
                             <p className="text-xs text-slate-400 mt-1">
-                              2 minutes ago
+                              {formatDateTime(app.createdAt)}
                             </p>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="p-2 border-t border-slate-700 bg-slate-800">
-                    <button className="w-full text-center text-xs text-amber-400 hover:text-amber-300 py-1 font-medium">
-                      View all notifications
-                    </button>
-                  </div>
+                    ))
+                  )}
+                  <button
+                    onClick={() => navigate("/admin/applications?type=all")}
+                    className="w-full text-center text-xs text-amber-400 hover:text-amber-300 py-1 font-medium"
+                  >
+                    View all notifications
+                  </button>
                 </div>
               </>
             )}

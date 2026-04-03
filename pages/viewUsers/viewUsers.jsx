@@ -110,6 +110,23 @@ const ViewUsers = () => {
     ),
   };
 
+  const handleToggleStatus = async (userId, currentStatus) => {
+    const confirmMessage = currentStatus
+      ? "Are you sure you want to deactivate this user?"
+      : "Are you sure you want to activate this user?";
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      const res = await api.patch(`/admin/user/status/${userId}`);
+      toast.success(res.data.message);
+
+      fetchUsers(); // refresh list
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="p-6 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
@@ -244,9 +261,21 @@ const ViewUsers = () => {
                       ></span>
                       {user.isActive ? "Active" : "Inactive"}
                     </span>
-                    <span className="text-xs text-slate-400">
-                      ID: {user.userId?.slice(-8)}
-                    </span>
+
+                    {/* 🔥 TOGGLE BUTTON */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(user._id, user.isActive);
+                      }}
+                      className={`text-xs px-3 py-1 rounded-lg transition ${
+                        user.isActive
+                          ? "bg-rose-500/20 text-rose-300 hover:bg-rose-500/30"
+                          : "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                      }`}
+                    >
+                      {user.isActive ? "Deactivate" : "Activate"}
+                    </button>
                   </div>
 
                   {/* User Icon and Name */}
